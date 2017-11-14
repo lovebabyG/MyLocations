@@ -41,17 +41,17 @@ class CurrentLocationViewController : UIViewController
             mLocationManager.requestWhenInUseAuthorization()
         }
         
-        mLocationManager.delegate = self
-        mLocationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        mLocationManager.startUpdatingLocation()
+        startLocationManager()
+        updateLabels()
     }
     
     // MARK: - CLLocationManagerDelegate
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error){
-        print("didFailWithError \(error)")
+        print("didFailWithError: \(error)")
         
         if (error as NSError).code == CLError.locationUnknown.rawValue {
+            print("didFailWithError: CLError.locationUnknown")
             return
         }
         
@@ -63,7 +63,26 @@ class CurrentLocationViewController : UIViewController
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let newLocation = locations.last!
+        print("didUpdateLocations: \(newLocation)")
+        
+        if newLocation.timestamp.timeIntervalSinceNow < -5 {
+            print("didUpdateLocations: timeIntervalSinceNow < -5")
+            return
+        }
+        
+        if newLocation.horizontalAccuracy < 0{
+            print("didUpdateLocations: horizontalAccuracy < 0")
+            return
+        }
+        
+        if locations = nil || locations!.horizontalAccuracy > newLocation.horizontalAccuracy {
+            mLastLocationError = nil
+            locations = newLocation
+        }
+        
         mLocation = newLocation
+        
+        mLastLocationError = nil
         
         updateLabels()
     }
@@ -120,6 +139,15 @@ class CurrentLocationViewController : UIViewController
             }
             
             messageLabel.text = statusMessage
+        }
+    }
+    
+    func startLocationManager() {
+        if CLLocationManager.locationServicesEnabled() {
+            mLocationManager.delegate = self
+            mLocationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+            mLocationManager.startUpdatingLocation()
+            mUpdatingLocation = true
         }
     }
     
